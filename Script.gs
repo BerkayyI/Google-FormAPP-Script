@@ -1,27 +1,86 @@
+
+var data = []
+
 function onOpen() {
   var ui = FormApp.getUi();
   ui.createMenu('Reservation management')
-      .addItem('Confirm lasts reservations', 'myFunction')
-      .addToUi();
+    .addItem('To confirm the reservations of your choice.\n please proceed', 'showInputDialog')
+    .addToUi();
 }
 
-var data = [];
-
-function myFunction() {
-  var FormApplication = FormApp.getActiveForm()
-  const formResponses = FormApplication.getResponses();
-  for(var i = 0; i < 6; i++){
-    var item = FormApplication.getItems()[i]
+function showInputDialog() {
+  var ui = FormApp.getUi();
+  var result = ui.prompt('Enter the number of last responses to process:');
+  
+  if (result.getSelectedButton() == ui.Button.OK) {
+    var lastResponses = parseInt(result.getResponseText());
     
-    for (const formResponse of formResponses) {
-      const itemResponse = formResponse.getResponseForItem(item);
-      data[i] = itemResponse.getResponse();
+    if (!isNaN(lastResponses)) {
+      myFunction(lastResponses);
+    } else {
+      ui.alert('Invalid input. Please enter a valid number.');
+    }
+  }
+}
+
+
+function myFunction(lastResponses) {
+  var FormApplication = FormApp.getActiveForm();
+  const formResponses = FormApplication.getResponses();
+
+  
+  for (var i = formResponses.length - 1; i >= Math.max(0, formResponses.length - lastResponses); i--) {
+    var data = [];
+
+    for (var j = 0; j < 6; j++) {
+      var item = FormApplication.getItems()[j];
+
+      const itemResponse = formResponses[i].getResponseForItem(item);
+      data[j] = itemResponse.getResponse();
       console.log(itemResponse.getResponse());
     }
-  }  
-
-  addToCalendar(data)
+    var respondentEmail = formResponses[i].getRespondentEmail();
+    sendEmailToRespondent(data, respondentEmail);
+    addToCalendar(data);
+  }
 }
+
+function extractEmailFromResponses(formResponse) {
+  
+  var emailFieldTitle = 'Email';
+
+  // Find the 'Short answer' text field by title
+  var emailField = FormApp.getActiveForm().getItems(FormApp.ItemType.TEXT).filter(function(item) {
+    return item.getTitle() === emailFieldTitle;
+  })[0];
+  if (emailField) {
+    var emailResponse = formResponse.getResponseForItem(emailField);
+    if (emailResponse) {
+      return emailResponse.getResponse();
+    }
+  }
+  return null;
+}
+
+function sendEmailToRespondent(data, respondentEmail) {
+  if (respondentEmail) {
+    var emailSubject = 'Reservation Confirmation';
+    var emailBody = 'Dear ' + data[0] + ',\n\n';
+    emailBody += 'Thank you for your reservation on the Course ' + data[1] + '.\n';
+    emailBody += 'Details about the date: ' + data[2] +  ' from: ' + data[3] + 'To: ' + data[4] + '\n';
+
+    try {
+      GmailApp.sendEmail(respondentEmail, emailSubject, emailBody);
+      console.log('Email sent to: ' + respondentEmail);
+    } catch (error) {
+      console.error('Error sending email to: ' + respondentEmail + '\n' + error.toString());
+    }
+  } else {
+    console.log('Email address not found in form response.');
+  }
+}
+
+
 
 function getMonthName(month) {
   var monthNames = [
