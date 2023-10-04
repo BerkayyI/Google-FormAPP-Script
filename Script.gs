@@ -64,10 +64,10 @@ function extractEmailFromResponses(formResponse) {
 
 function sendEmailToRespondent(data, respondentEmail) {
   if (respondentEmail) {
-    var emailSubject = 'Reservation Confirmation';
+    var emailSubject = 'Pruebas Reserva Aula Ateca'; 
     var emailBody = 'Dear ' + data[0] + ',\n\n';
-    emailBody += 'Thank you for your reservation on the Course ' + data[1] + '.\n';
-    emailBody += 'Details about the date: ' + data[2] +  ' from: ' + data[3] + 'To: ' + data[4] + '\n';
+    emailBody += 'Thank you for your reservation!\nCourse: ' + data[1] + '.\n';
+    emailBody += 'Details about the date and time\n ' + data[2] +  ' from: ' + data[3] + ' To: ' + data[4] + '\nThe Resources needed: ' + data[5] + '\n';
 
     try {
       GmailApp.sendEmail(respondentEmail, emailSubject, emailBody);
@@ -79,7 +79,6 @@ function sendEmailToRespondent(data, respondentEmail) {
     console.log('Email address not found in form response.');
   }
 }
-
 
 
 function getMonthName(month) {
