@@ -27,9 +27,9 @@ function showInputDialog() {
 function myFunction(lastResponses) {
   var FormApplication = FormApp.getActiveForm();
   const formResponses = FormApplication.getResponses();
+  var i;
 
-  
-  for (var i = formResponses.length - 1; i >= Math.max(0, formResponses.length - lastResponses); i--) {
+  for (i = formResponses.length - 1; i >= Math.max(0, formResponses.length - lastResponses); i--) {
     var data = [];
 
     for (var j = 0; j < 6; j++) {
@@ -39,9 +39,60 @@ function myFunction(lastResponses) {
       data[j] = itemResponse.getResponse();
       console.log(itemResponse.getResponse());
     }
-    var respondentEmail = formResponses[i].getRespondentEmail();
-    sendEmailToRespondent(data, respondentEmail);
-    addToCalendar(data);
+    
+
+    // Check if start time is greater than end time
+    if (data[3] > data[4]) {
+      // Handle the case where start time is greater than end time
+      console.log('Start time is greater than end time for response ' + i);
+
+      // Send an error email to the respondent
+      var respondentEmail = formResponses[i].getRespondentEmail();
+      sendErrorEmail(data, respondentEmail);
+
+     
+    } else {
+      // Continue processing for valid responses
+      var respondentEmail = formResponses[i].getRespondentEmail();
+      sendEmailToRespondent(data, respondentEmail);
+      addToCalendar(data);
+    }
+  }
+}
+
+
+function formatDate(dateTimeStr) {
+  try {
+    var dateTime = new Date(dateTimeStr);
+    var year = dateTime.getFullYear();
+    var month = ('0' + (dateTime.getMonth() + 1)).slice(-2); // Add 1 to month (0-based index)
+    var day = ('0' + dateTime.getDate()).slice(-2);
+    var hours = ('0' + dateTime.getHours()).slice(-2);
+    var minutes = ('0' + dateTime.getMinutes()).slice(-2);
+    var seconds = ('0' + dateTime.getSeconds()).slice(-2);
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } catch (error) {
+    console.error("Error formatting date: " + error.message);
+    return null;
+  }
+}
+
+
+
+function sendErrorEmail(data, respondentEmail) {
+  var emailSubject = 'Reservation Error';
+  var emailBody = 'Dear ' + data[0] + ',\n\n';
+  emailBody += 'We encountered an issue with your reservation:\n';
+  emailBody += 'Start Time: ' + data[3] + '\n';
+  emailBody += 'End Time: ' + data[4] + '\n';
+  emailBody += 'Please redo your reservation with valid start and end times.\n';
+
+  try {
+    GmailApp.sendEmail(respondentEmail, emailSubject, emailBody);
+    console.log('Error email sent to: ' + respondentEmail);
+  } catch (error) {
+    console.error('Error sending error email to: ' + respondentEmail + '\n' + error.toString());
   }
 }
 
