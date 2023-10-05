@@ -61,25 +61,6 @@ function myFunction(lastResponses) {
 }
 
 
-function formatDate(dateTimeStr) {
-  try {
-    var dateTime = new Date(dateTimeStr);
-    var year = dateTime.getFullYear();
-    var month = ('0' + (dateTime.getMonth() + 1)).slice(-2); // Add 1 to month (0-based index)
-    var day = ('0' + dateTime.getDate()).slice(-2);
-    var hours = ('0' + dateTime.getHours()).slice(-2);
-    var minutes = ('0' + dateTime.getMinutes()).slice(-2);
-    var seconds = ('0' + dateTime.getSeconds()).slice(-2);
-
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  } catch (error) {
-    console.error("Error formatting date: " + error.message);
-    return null;
-  }
-}
-
-
-
 function sendErrorEmail(data, respondentEmail) {
   var emailSubject = 'Reservation Error';
   var emailBody = 'Dear ' + data[0] + ',\n\n';
