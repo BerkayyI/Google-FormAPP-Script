@@ -60,28 +60,42 @@ function myFunction(lastResponses) {
     if (response == ui.Button.YES) {
     var respondentEmail = formResponses[i].getRespondentEmail();
       
+      if (data[3] > data[4]) {
+        console.log('Start time is greater than end time for response ' + i);
+        var respondentEmail = formResponses[i].getRespondentEmail();
+        sendErrorEmail(data, respondentEmail);
+      }
 
-    if (data[3] > data[4]) {
-      console.log('Start time is greater than end time for response ' + i);
-      var respondentEmail = formResponses[i].getRespondentEmail();
-      sendErrorEmail(data, respondentEmail);
+
+      else if(data[3] == "00:00" || data[4] == "00:00"){
+        console.log('Start time is 00:00  ' + i);
+        var respondentEmail = formResponses[i].getRespondentEmail();
+        sendErrorEmail(data, respondentEmail);
+      }
+      else{
+        sendEmailToRespondent(data, respondentEmail);
+        addToCalendar(data);
+        
+      }
+
     }
+    if(response == ui.Button.NO){
+      if (data[3] > data[4]) {
+        console.log('Start time is greater than end time for response ' + i);
+        
+      }
 
 
-    else if(data[3] == "00:00" || data[4] == "00:00"){
-      console.log('Start time is 00:00  ' + i);
-      var respondentEmail = formResponses[i].getRespondentEmail();
-      sendErrorEmail(data, respondentEmail);
+      else if(data[3] == "00:00" || data[4] == "00:00"){
+        console.log('Start time is 00:00  ' + i);
+        
+      }
+      else{
+        addToCalendar(data);
+        
+      }
     }
-
-
-
-    sendEmailToRespondent(data, respondentEmail);
-    ui.alert('Email sent.');
-    } else {
-      ui.alert('Email not sent.');
-    }
-      addToCalendar(data);
+    
     
   }
 
@@ -189,33 +203,61 @@ function getMonthName(month) {
   return monthNames[parseInt(month) - 1];
 }
 
+function addToCalendar(data) {
+  var DataComponents = data[2].split('-');
+  var Year = DataComponents[0];
+  var Month = DataComponents[1];
+  var Day = DataComponents[2];
 
-function addToCalendar(data){
-  
-  
-  var DataComponents = data[2].split('-')
-  var Year = DataComponents[0]
-  var Month = DataComponents[1]
-  var Day = DataComponents[2]
+  var StartTimeComponents = data[3].split(':');
+  var startHours = StartTimeComponents[0];
+  var startMinute = StartTimeComponents[1];
 
-  var StartTimeComponents = data[3].split(':')
-  var startHours = StartTimeComponents[0]
-  var startMinute = StartTimeComponents[1]
+  var StopTimeComponents = data[4].split(':');
+  var stopHours = StopTimeComponents[0];
+  var stopMinute = StopTimeComponents[1];
 
-  var StopTimeComponents = data[4].split(':')
-  var stopHours = StopTimeComponents[0]
-  var stopMinute = StopTimeComponents[1]
+  // Set the time zone for Cádiz, Spain
+  var timeZone = 'Europe/Madrid';
 
-  var formattedStartDate = `'${getMonthName(Month)} ${Day}, ${Year} ${startHours - 2}:${startMinute}:00 UTC'`;
-  var formattedEndDate = `'${getMonthName(Month)} ${Day}, ${Year} ${stopHours - 2}:${stopMinute}:00 UTC'`;
-  
-  const calendarID = 'berkayischule@gmail.com'
-  // here u can change the Calendar ID
+  // Construct formatted start and end dates with the time zone
+  var formattedStartDate = new Date(Date.UTC(Year, Month - 1, Day, startHours, startMinute, 0));
+  var formattedEndDate = new Date(Date.UTC(Year, Month - 1, Day, stopHours, stopMinute, 0));
 
+  const calendarID = 'berkayischule@gmail.com';
+
+  // Get the calendar
+  var calendar = CalendarApp.getCalendarById(calendarID);
+
+  // Fetch all events within the specified time range
+  var events = calendar.getEvents(formattedStartDate, formattedEndDate);
+
+  var eventOverlap = false;
+
+  // Check if there are existing events that overlap with the specified time frame
+  for (var i = 0; i < events.length; i++) {
+    var event = events[i];
+    var eventStart = event.getStartTime();
+    var eventEnd = event.getEndTime();
+
+    if (
+      (formattedStartDate >= eventStart && formattedStartDate < eventEnd) ||
+      (formattedEndDate > eventStart && formattedEndDate <= eventEnd)
+    ) {
+      eventOverlap = true;
+      break;
+    }
+  }
+
+  if (!eventOverlap) {
+    // No overlapping event found, create a new event
     var event = CalendarApp.getCalendarById(calendarID).createEvent(`Teacher: ${data[0]}`,
-      new Date(formattedStartDate),
-      new Date(formattedEndDate),
-      {description: `Activity: ${data[5]}`})
-  Logger.log('Event ID: ' + event.getId());
-
+      formattedStartDate,
+      formattedEndDate,
+      { description: `Activity: ${data[5]}` });
+    Logger.log('Event ID: ' + event.getId());
+  } else {
+    Logger.log('Event overlaps with an existing event. Skipping event creation.');
+  }
 }
+
